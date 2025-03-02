@@ -1,0 +1,19 @@
+/* app/styles/bundles.css */
+.bundle-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px; /* Adjust the gap as needed */
+  }
+  
+  .bundle-card {
+    flex: 1 1 calc(33.333% - 16px); /* Adjust for three columns */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    background-color: white;
+    padding: 16px;
+    transition: box-shadow 0.2s;
+  }
+  
+  .bundle-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
