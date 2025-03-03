@@ -168,7 +168,7 @@ export default function Index() {
                       width: "80px",
                       height: "80px",
                       borderRadius: "50%",
-                      backgroundColor: "#FFB200",
+                      backgroundColor: "#66D2CE",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -260,7 +260,7 @@ export default function Index() {
                 </div>
               ))}
             </div>
-            <div style={{ marginLeft: "100px", width: "600px", marginTop: "20px" }}>
+            <div style={{ width: "600px", marginTop: "20px" }}>
               <Card>
                 <div
                   style={{
