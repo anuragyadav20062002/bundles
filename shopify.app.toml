@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "06cf693b0888af16c5d14ae91b8270ff"
-application_url = "https://meet-fo-magnitude-molecules.trycloudflare.com"
+application_url = "https://preliminary-painful-crossing-pounds.trycloudflare.com"
 embedded = true
 name = "bundles"
 handle = "bundles-90"
@@ -19,9 +19,9 @@ scopes = "read_products,read_themes,write_products,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://meet-fo-magnitude-molecules.trycloudflare.com/auth/callback",
-  "https://meet-fo-magnitude-molecules.trycloudflare.com/auth/shopify/callback",
-  "https://meet-fo-magnitude-molecules.trycloudflare.com/api/auth/callback"
+  "https://preliminary-painful-crossing-pounds.trycloudflare.com/auth/callback",
+  "https://preliminary-painful-crossing-pounds.trycloudflare.com/auth/shopify/callback",
+  "https://preliminary-painful-crossing-pounds.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

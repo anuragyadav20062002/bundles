@@ -1,6 +1,7 @@
 import { json } from "@remix-run/node"
 import { useLoaderData, useNavigate } from "@remix-run/react"
-import { Page, Text, Button, Card } from "@shopify/polaris"
+import { Page, Text, Button, Card, Icon } from "@shopify/polaris"
+import { WandIcon, OrderDraftFilledIcon } from "@shopify/polaris-icons"
 import { authenticate } from "../shopify.server"
 import { prisma } from "../db.server"
 import { useToast } from "~/components/ToastProvider"
@@ -83,27 +84,29 @@ function BundleCard({ bundle, onToggle }) {
 
   return (
     <Card>
-      <div className="p-4">
-        <div className="space-y-2">
+      <div style={{ padding: "16px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <Text variant="headingMd" as="h3">
             {bundle.name}
           </Text>
-          <div className="text-sm text-gray-500">
+          <div style={{ fontSize: "14px", color: "var(--p-text-subdued)" }}>
             {bundle.steps.length} steps • {bundle.pricing ? `${bundle.pricing.type} pricing` : "No pricing"}
           </div>
-          <div className="flex items-center gap-2">
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <div
-              className={`w-2 h-2 rounded-full ${
-                bundle.active
-                  ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"
-                  : "bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]"
-              }`}
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: bundle.active ? "rgb(34, 197, 94)" : "rgb(234, 179, 8)",
+                boxShadow: bundle.active ? "0 0 8px rgba(34, 197, 94, 0.6)" : "0 0 8px rgba(234, 179, 8, 0.6)",
+              }}
             />
-            <span className="text-sm font-medium">{bundle.active ? "Active" : "Draft"}</span>
+            <span style={{ fontSize: "14px", fontWeight: "500" }}>{bundle.active ? "Active" : "Draft"}</span>
           </div>
         </div>
 
-        <div className="mt-4 flex gap-2">
+        <div style={{ marginTop: "16px", display: "flex", gap: "8px" }}>
           <Button onClick={handleToggle} size="slim">
             Toggle bundle status
           </Button>
@@ -132,19 +135,16 @@ export default function Index() {
     const bundleEl = document.querySelector(`[data-bundle-id="${bundleId}"]`)
     if (bundleEl) {
       // Update status text and indicator
-      const statusText = bundleEl.querySelector(".text-sm.font-medium")
+      const statusText = bundleEl.querySelector('[style*="font-weight: 500"]')
       if (statusText) {
         statusText.textContent = active ? "Active" : "Draft"
       }
 
       // Update indicator light
-      const indicator = bundleEl.querySelector(".rounded-full")
+      const indicator = bundleEl.querySelector('[style*="border-radius: 50%"]')
       if (indicator) {
-        indicator.className = `w-2 h-2 rounded-full ${
-          active
-            ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"
-            : "bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]"
-        }`
+        indicator.style.backgroundColor = active ? "rgb(34, 197, 94)" : "rgb(234, 179, 8)"
+        indicator.style.boxShadow = active ? "0 0 8px rgba(34, 197, 94, 0.6)" : "0 0 8px rgba(234, 179, 8, 0.6)"
       }
     }
   }
@@ -157,24 +157,167 @@ export default function Index() {
         onAction: () => navigate("/app/bundles/new"),
       }}
     >
-      <div className="mt-4 space-y-4">
+      <div style={{ marginTop: "20px" }}>
         {bundles.length === 0 ? (
-          <Card>
-            <div className="p-16 text-center">
-              <div className="space-y-4">
-                <Text variant="headingMd">Create your first bundle</Text>
-                <Button onClick={() => navigate("/app/bundles/new")}>Create Bundle</Button>
-              </div>
+          <>
+            <div style={{ marginLeft: "150px", width: "600px" }}>
+              <Card>
+                <div style={{ padding: "24px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      borderRadius: "50%",
+                      backgroundColor: "#FFB200",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginBottom: "16px",
+                    }}
+                  >
+                    <div style={{ transform: "scale(2.0)" }}>
+                      <Icon source={WandIcon} color="base" />
+                    </div>
+                  </div>
+                  <Text variant="headingMd" as="h2">
+                    Setup your bundles quickly
+                  </Text>
+                  <Text variant="bodyMd" as="p" color="subdued" style={{ margin: "4px 0 16px 0" }}>
+                    Get your bundles up and running in 2 easy steps!
+                  </Text>
+                  <div style={{ marginTop: "10px", width: "100%" }}>
+                    <Button onClick={() => navigate("/app/bundles/new")} variant="primary" fullWidth>
+                      Quick Setup
+                    </Button>
+                  </div>
+                </div>
+              </Card>
             </div>
-          </Card>
+            <div style={{ marginLeft: "150px", width: "600px", marginTop: "20px" }}>
+              <Card>
+                <div
+                  style={{
+                    padding: "20px",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div>
+                    <Text variant="headingMd" as="h2">
+                      Design services
+                    </Text>
+                    <div style={{ marginTop: "8px" }}>
+                      <Text variant="bodyMd" as="p" color="subdued">
+                        Transform the bundle builder for your store using our expert bundle design services
+                      </Text>
+                      <ul style={{ marginTop: "12px", marginBottom: "16px", paddingLeft: "20px" }}>
+                        <li style={{ color: "var(--p-text-subdued)" }}>
+                          <Text variant="bodyMd" as="span">
+                            A fixed price of $100 (one-time cost) for any advanced CSS customization.
+                          </Text>
+                        </li>
+                        <li style={{ color: "var(--p-text-subdued)", marginTop: "4px" }}>
+                          <Text variant="bodyMd" as="span">
+                            No hidden charges, ensuring transparency.
+                          </Text>
+                        </li>
+                        <li style={{ color: "var(--p-text-subdued)", marginTop: "4px" }}>
+                          <Text variant="bodyMd" as="span">
+                            Professional bundle design services available.
+                          </Text>
+                        </li>
+                      </ul>
+                      <Button variant="primary" size="slim">
+                        Get a quote
+                      </Button>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      borderRadius: "50%",
+                      backgroundColor: "#FFF5EA",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Icon source={OrderDraftFilledIcon} color="base" />
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </>
         ) : (
-          <div className="space-y-4">
-            {bundles.map((bundle) => (
-              <div key={bundle.id} data-bundle-id={bundle.id}>
-                <BundleCard bundle={bundle} onToggle={handleToggle} />
-              </div>
-            ))}
-          </div>
+          <>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {bundles.map((bundle) => (
+                <div key={bundle.id} data-bundle-id={bundle.id}>
+                  <BundleCard bundle={bundle} onToggle={handleToggle} />
+                </div>
+              ))}
+            </div>
+            <div style={{ marginLeft: "100px", width: "600px", marginTop: "20px" }}>
+              <Card>
+                <div
+                  style={{
+                    padding: "20px",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div>
+                    <Text variant="headingMd" as="h2">
+                      Design services
+                    </Text>
+                    <div style={{ marginTop: "8px" }}>
+                      <Text variant="bodyMd" as="p" color="subdued">
+                        Transform the bundle builder for your store using our expert bundle design services
+                      </Text>
+                      <ul style={{ marginTop: "12px", marginBottom: "16px", paddingLeft: "20px" }}>
+                        <li style={{ color: "var(--p-text-subdued)" }}>
+                          <Text variant="bodyMd" as="span">
+                            A fixed price of $100 (one-time cost) for any advanced CSS customization.
+                          </Text>
+                        </li>
+                        <li style={{ color: "var(--p-text-subdued)", marginTop: "4px" }}>
+                          <Text variant="bodyMd" as="span">
+                            No hidden charges, ensuring transparency.
+                          </Text>
+                        </li>
+                        <li style={{ color: "var(--p-text-subdued)", marginTop: "4px" }}>
+                          <Text variant="bodyMd" as="span">
+                            Professional bundle design services available.
+                          </Text>
+                        </li>
+                      </ul>
+                      <Button variant="primary" size="slim">
+                        Get a quote
+                      </Button>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      borderRadius: "50%",
+                      backgroundColor: "#FFF5EA",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Icon source={OrderDraftFilledIcon} color="base" />
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </>
         )}
       </div>
     </Page>

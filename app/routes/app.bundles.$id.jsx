@@ -305,7 +305,7 @@ export default function BundleDetails() {
       title={bundle.name}
       primaryAction={{
         content: isPublishing ? "Publishing..." : "Publish",
-        icon: <Upload className="h-5 w-5" />,
+        icon: <Upload style={{ height: "20px", width: "20px" }} />,
         onAction: () => setShowPublishModal(true),
         loading: isPublishing,
         disabled: isPublishing,
@@ -320,41 +320,54 @@ export default function BundleDetails() {
       <Layout>
         <Layout.Section>
           <Card>
-            <div className="p-6">
+            <div style={{ padding: "24px" }}>
               <BlockStack gap="4">
-                <div className="border-b pb-4">
+                <div style={{ borderBottom: "1px solid var(--p-border-subdued)", paddingBottom: "16px" }}>
                   <Text variant="headingMd" as="h2">
                     Bundle Steps
                   </Text>
                 </div>
 
                 {bundle.steps.length === 0 ? (
-                  <div className="py-6 text-center">
+                  <div style={{ padding: "24px 0", textAlign: "center" }}>
                     <Text tone="subdued">No steps yet. Click "Add Step" to create your first step.</Text>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                     {bundle.steps.map((step) => (
                       <div
                         key={step.id}
-                        className="flex items-center justify-between border-b border-border-subdued last:border-0 py-4"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          borderBottom: "1px solid var(--p-border-subdued)",
+                          paddingTop: "16px",
+                          paddingBottom: "16px",
+                        }}
                       >
-                        <div className="flex-grow">
+                        <div style={{ flexGrow: 1 }}>
                           <Text variant="bodyMd" fontWeight="bold">
                             {step.name}
                           </Text>
                         </div>
-                        <div className="flex space-x-2">
-                          <Button onClick={() => handleEditStep(step)} icon={<Pencil className="h-5 w-5" />}>
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <Button
+                            onClick={() => handleEditStep(step)}
+                            icon={<Pencil style={{ height: "20px", width: "20px" }} />}
+                          >
                             Edit
                           </Button>
-                          <Button onClick={() => handleCloneStep(step)} icon={<CopyCheck className="h-5 w-5" />}>
+                          <Button
+                            onClick={() => handleCloneStep(step)}
+                            icon={<CopyCheck style={{ height: "20px", width: "20px" }} />}
+                          >
                             Clone
                           </Button>
                           <Button
                             tone="critical"
                             onClick={() => handleDeleteStep(step.id)}
-                            icon={<Trash2 className="h-5 w-5" />}
+                            icon={<Trash2 style={{ height: "20px", width: "20px" }} />}
                           >
                             Delete
                           </Button>
@@ -368,9 +381,9 @@ export default function BundleDetails() {
           </Card>
 
           {/* Pricing Card */}
-          <div className="mt-6">
+          <div style={{ marginTop: "24px" }}>
             <Card>
-              <div className="p-6">
+              <div style={{ padding: "24px" }}>
                 <InlineStack align="space-between">
                   <BlockStack gap="1">
                     <Text variant="headingMd" as="h2">
