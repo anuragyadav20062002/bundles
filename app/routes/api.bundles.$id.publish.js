@@ -170,8 +170,19 @@ export const action = async ({ request, params }) => {
     })
 
     // Validate the request body
-    if (!body?.productMatching?.productType?.length) {
+    if (!body?.productMatching) {
+      return json({ error: "Product matching configuration is required" }, { status: 400 })
+    }
+
+    const matchingType = body.productMatching.type
+
+    // Validate based on matching type
+    if (matchingType === "productType" && (!body.productMatching.rules || !body.productMatching.rules.length)) {
       return json({ error: "At least one product type is required" }, { status: 400 })
+    } else if (matchingType === "products" && (!body.productMatching.rules || !body.productMatching.rules.length)) {
+      return json({ error: "At least one product is required" }, { status: 400 })
+    } else if (matchingType === "collections" && (!body.productMatching.rules || !body.productMatching.rules.length)) {
+      return json({ error: "At least one collection is required" }, { status: 400 })
     }
 
     // Get the bundle
@@ -202,8 +213,8 @@ export const action = async ({ request, params }) => {
 
     // Structure matching rules
     const matchingRules = {
-      type: "productType",
-      rules: body.productMatching.productType,
+      type: matchingType,
+      rules: body.productMatching.rules,
     }
 
     // Transform bundle data for Shopify

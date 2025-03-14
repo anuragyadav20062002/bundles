@@ -1,13 +1,28 @@
-{% assign product_type = product.type | downcase %}
+{% assign product_id = product.id %}
+{% assign collection_ids = product.collections | map: 'id' %}
 
 {% for bundle_entry in shop.metafields.bundles %}
 {% assign bundle = bundle_entry[1].value | parse_json %}
 {% assign should_display = false %}
 
-{% if bundle.matching.type == 'productType' %}
+{% if bundle.matching.type == 'products' %}
   {% for rule in bundle.matching.rules %}
-    {% if rule == product_type %}
+    {% assign product_gid = rule.id | remove: "gid://shopify/Product/" %}
+    {% if product_gid == product_id or product_id contains product_gid %}
       {% assign should_display = true %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
+{% elsif bundle.matching.type == 'collections' %}
+  {% for rule in bundle.matching.rules %}
+    {% assign collection_gid = rule.id | remove: "gid://shopify/Collection/" %}
+    {% for collection_id in collection_ids %}
+      {% if collection_id == collection_gid %}
+        {% assign should_display = true %}
+        {% break %}
+      {% endif %}
+    {% endfor %}
+    {% if should_display %}
       {% break %}
     {% endif %}
   {% endfor %}
