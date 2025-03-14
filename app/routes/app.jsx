@@ -1,4 +1,4 @@
-import { json } from "@remix-run/node"
+import { json, redirect } from "@remix-run/node"
 import { Outlet, useLoaderData, useRouteError } from "@remix-run/react"
 import { AppProvider } from "@shopify/shopify-app-remix/react"
 import { authenticate } from "../shopify.server"
@@ -6,10 +6,35 @@ import { prisma } from "../db.server"
 
 export const loader = async ({ request }) => {
   try {
-    const { admin, session } = await authenticate.admin(request)
+    console.log("=== APP ROUTE LOADER CALLED ===")
+    console.log("Request URL:", request.url)
+    console.log("Request headers:", Object.fromEntries([...request.headers.entries()]))
+
+    // Try to authenticate
+    let admin, session
+    try {
+      const result = await authenticate.admin(request)
+      admin = result.admin
+      session = result.session
+      console.log("Authentication successful, session:", session)
+    } catch (authError) {
+      console.error("Authentication error:", authError)
+
+      // If authentication failed, redirect to login with the shop parameter if available
+      const url = new URL(request.url)
+      const shop = url.searchParams.get("shop")
+      if (shop) {
+        console.log("Redirecting to login with shop:", shop)
+        throw redirect(`/auth/login?shop=${encodeURIComponent(shop)}`)
+      }
+
+      console.log("Redirecting to login without shop")
+      throw new Response("Unauthorized", { status: 401 })
+    }
 
     if (!session?.shop) {
-      throw new Response("Unauthorized", { status: 401 })
+      console.error("No shop in session")
+      throw new Response("Unauthorized - No shop in session", { status: 401 })
     }
 
     try {
@@ -72,12 +97,19 @@ export const loader = async ({ request }) => {
       // Continue loading the app even if cleanup fails
     }
 
+    console.log("App loader successful, returning data")
     return json({
       apiKey: process.env.SHOPIFY_API_KEY,
       shop: session.shop,
     })
   } catch (error) {
     console.error("App loader error:", error)
+
+    // If it's a redirect response, throw it directly
+    if (error instanceof Response && error.status === 302) {
+      throw error
+    }
+
     throw new Response(error.message || "Unauthorized", { status: error.status || 401 })
   }
 }

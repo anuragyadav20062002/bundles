@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "06cf693b0888af16c5d14ae91b8270ff"
-application_url = "https://preliminary-painful-crossing-pounds.trycloudflare.com"
+application_url = "https://command-study-personnel-ste.trycloudflare.com"
 embedded = true
 name = "bundles"
 handle = "bundles-90"
@@ -15,13 +15,13 @@ api_version = "2025-01"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_products,read_themes,write_products,write_themes"
+scopes = "read_products,read_themes,write_products,write_cart_transforms,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://preliminary-painful-crossing-pounds.trycloudflare.com/auth/callback",
-  "https://preliminary-painful-crossing-pounds.trycloudflare.com/auth/shopify/callback",
-  "https://preliminary-painful-crossing-pounds.trycloudflare.com/api/auth/callback"
+  "https://command-study-personnel-ste.trycloudflare.com/auth/callback",
+  "https://command-study-personnel-ste.trycloudflare.com/auth/shopify/callback",
+  "https://command-study-personnel-ste.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

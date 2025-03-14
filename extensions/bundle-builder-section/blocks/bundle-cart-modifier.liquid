@@ -1,0 +1,196 @@
+{% comment %}
+  Bundle Cart Modifier
+  This script modifies the cart to group bundle items together
+{% endcomment %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Function to group bundle items
+    function groupBundleItems() {
+      // Get all cart items
+      const cartItems = document.querySelectorAll('.cart-item');
+      if (!cartItems.length) return;
+      
+      // Group items by bundle ID
+      const bundleGroups = {};
+      const bundleItems = [];
+      const regularItems = [];
+      
+      cartItems.forEach(item => {
+        // Check if this is a bundle item
+        const bundleId = item.querySelector('[data-property="_bundle_id"]')?.textContent?.trim() || 
+                         item.querySelector('[data-property="bundle_id"]')?.textContent?.trim();
+        
+        if (bundleId) {
+          // This is a bundle item
+          bundleItems.push(item);
+          
+          if (!bundleGroups[bundleId]) {
+            bundleGroups[bundleId] = {
+              items: [],
+              totalPrice: 0,
+              bundleName: item.querySelector('[data-property="_bundle_name"]')?.textContent?.trim() || 
+                          item.querySelector('[data-property="bundle_name"]')?.textContent?.trim() || 
+                          `Bundle ${bundleId}`
+            };
+          }
+          
+          // Add to bundle group
+          bundleGroups[bundleId].items.push(item);
+          
+          // Add price to total
+          const priceText = item.querySelector('.cart-item__price')?.textContent?.trim() || '0';
+          const price = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 0;
+          bundleGroups[bundleId].totalPrice += price;
+          
+          // Hide the original item
+          item.style.display = 'none';
+        } else {
+          // Regular item
+          regularItems.push(item);
+        }
+      });
+      
+      // Create bundle items
+      Object.keys(bundleGroups).forEach(bundleId => {
+        const bundle = bundleGroups[bundleId];
+        const firstItem = bundle.items[0];
+        const cartItemsList = firstItem.closest('.cart-items');
+        
+        if (!cartItemsList) return;
+        
+        // Create bundle item HTML
+        const bundleItem = document.createElement('div');
+        bundleItem.className = 'cart-item bundle-cart-item';
+        bundleItem.dataset.bundleId = bundleId;
+        
+        // Format currency
+        const formatter = new Intl.NumberFormat(document.documentElement.lang || 'en-US', {
+          style: 'currency',
+          currency: Shopify?.currency?.active || 'USD'
+        });
+        
+        // Create item list
+        const itemsList = bundle.items.map(item => {
+          const title = item.querySelector('.cart-item__name')?.textContent?.trim() || 'Item';
+          const quantity = item.querySelector('.quantity-selector__value')?.value || '1';
+          return `${quantity} × ${title}`;
+        }).join(', ');
+        
+        // Set bundle item HTML
+        bundleItem.innerHTML = `
+          <div class="bundle-cart-item__content">
+            <div class="bundle-cart-item__image">
+              <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bundleimage.jpg-LSBoFMUEUqYl0gGo8Zqq0sq2QsC4V6.jpeg" alt="${bundle.bundleName}">
+            </div>
+            <div class="bundle-cart-item__details">
+              <h3 class="bundle-cart-item__title">${bundle.bundleName}</h3>
+              <p class="bundle-cart-item__items">${itemsList}</p>
+              <div class="bundle-cart-item__price">${formatter.format(bundle.totalPrice)}</div>
+              <button type="button" class="bundle-cart-item__remove" data-bundle-id="${bundleId}">Remove</button>
+            </div>
+          </div>
+        `;
+        
+        // Add bundle item to cart
+        cartItemsList.insertBefore(bundleItem, cartItemsList.firstChild);
+        
+        // Add remove button listener
+        bundleItem.querySelector('.bundle-cart-item__remove').addEventListener('click', function() {
+          // Remove all bundle items
+          bundle.items.forEach(item => {
+            const removeButton = item.querySelector('.cart-item__remove-button');
+            if (removeButton) removeButton.click();
+          });
+          
+          // Remove bundle item
+          bundleItem.remove();
+        });
+      });
+      
+      // Add styles
+      const styles = document.createElement('style');
+      styles.textContent = `
+        .bundle-cart-item {
+          display: flex;
+          padding: 1.5rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          margin-bottom: 1rem;
+        }
+        
+        .bundle-cart-item__content {
+          display: grid;
+          grid-template-columns: 80px 1fr;
+          gap: 1rem;
+          width: 100%;
+        }
+        
+        .bundle-cart-item__image img {
+          width: 80px;
+          height: 80px;
+          object-fit: cover;
+          border-radius: 4px;
+        }
+        
+        .bundle-cart-item__title {
+          font-size: 1.125rem;
+          font-weight: 600;
+          margin: 0 0 0.5rem;
+        }
+        
+        .bundle-cart-item__items {
+          font-size: 0.875rem;
+          color: #6b7280;
+          margin: 0 0 1rem;
+        }
+        
+        .bundle-cart-item__price {
+          font-weight: 600;
+          margin-bottom: 0.5rem;
+        }
+        
+        .bundle-cart-item__remove {
+          background: none;
+          border: none;
+          color: #ef4444;
+          padding: 0;
+          font-size: 0.875rem;
+          cursor: pointer;
+          text-decoration: underline;
+        }
+      `;
+      document.head.appendChild(styles);
+    }
+    
+    // Run on page load
+    groupBundleItems();
+    
+    // Also run when cart is updated
+    document.addEventListener('cart:updated', groupBundleItems);
+    
+    // Watch for cart changes
+    const cartObserver = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.type === 'childList' && mutation.addedNodes.length) {
+          groupBundleItems();
+        }
+      });
+    });
+    
+    // Start observing cart
+    const cartContainer = document.querySelector('.cart-items');
+    if (cartContainer) {
+      cartObserver.observe(cartContainer, { childList: true, subtree: true });
+    }
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Bundle Cart Modifier",
+  "target": "body",
+  "settings": []
+}
+{% endschema %}
+

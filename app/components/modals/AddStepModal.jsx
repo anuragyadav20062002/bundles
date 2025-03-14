@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
-import { Modal, TextField, Button, Text, Banner, Card, Tabs, Checkbox } from "@shopify/polaris"
+import { Modal, TextField, Button, Text, Banner, Card, Tabs, Checkbox, SkeletonBodyText } from "@shopify/polaris"
 import { ProductSelectionModal } from "./ProductSelectionModal"
 import { CollectionSelectionModal } from "./CollectionSelectionModal"
 import { ConditionsBuilder } from "./ConditionsBuilder"
@@ -11,18 +11,97 @@ import { ProductSelectionFromCollectionsModal } from "./ProductSelectionFromColl
 export function AddStepModal({ open, onClose, bundle, onSubmit, step = null, isEditing = false }) {
   const { showToast } = useToast()
   const [selectedTab, setSelectedTab] = useState(0)
+  const [isLoading, setIsLoading] = useState(isEditing && open)
   const [formData, setFormData] = useState({
-    name: step?.name || "",
-    conditions: step?.conditions || [{ type: "quantity", operator: "equals", value: "1" }],
-    displayVariants: step?.displayVariants || false,
+    name: "",
+    conditions: [{ type: "quantity", operator: "equals", value: "1" }],
+    displayVariants: false,
   })
-  const [selectedProducts, setSelectedProducts] = useState(step ? JSON.parse(step.products || "[]") : [])
-  const [selectedCollections, setSelectedCollections] = useState(step ? JSON.parse(step.collections || "[]") : [])
+  const [selectedProducts, setSelectedProducts] = useState([])
+  const [selectedCollections, setSelectedCollections] = useState([])
   const [error, setError] = useState("")
   const [showProductSelection, setShowProductSelection] = useState(false)
   const [showCollectionSelection, setShowCollectionSelection] = useState(false)
   const [showCollectionProductsModal, setShowCollectionProductsModal] = useState(false)
   const [collectionProducts, setCollectionProducts] = useState([])
+
+  // Initialize form data when editing
+  useEffect(() => {
+    if (open && isEditing && step) {
+      console.group("AddStepModal - Initializing Edit Mode")
+      console.log("Step data:", step)
+
+      try {
+        // Parse products and collections from JSON strings
+        const products = step.products ? JSON.parse(step.products) : []
+        const collections = step.collections ? JSON.parse(step.collections) : []
+
+        console.log("Parsed products:", products)
+        console.log("Parsed collections:", collections)
+
+        // Convert minQuantity/maxQuantity to conditions
+        let conditions = [{ type: "quantity", operator: "equals", value: "1" }]
+
+        if (step.minQuantity && step.maxQuantity) {
+          if (step.minQuantity === step.maxQuantity) {
+            conditions = [
+              {
+                type: "quantity",
+                operator: "equals",
+                value: step.minQuantity.toString(),
+              },
+            ]
+          } else if (step.maxQuantity === 99 || step.maxQuantity > step.minQuantity) {
+            conditions = [
+              {
+                type: "quantity",
+                operator: "at_least",
+                value: step.minQuantity.toString(),
+              },
+            ]
+          }
+        }
+
+        console.log("Converted conditions:", conditions)
+
+        // Set form data
+        setFormData({
+          name: step.name || "",
+          conditions: conditions,
+          displayVariants: step.displayVariants || false,
+        })
+
+        // Set selected products and collections
+        setSelectedProducts(products)
+        setSelectedCollections(collections)
+
+        // If collections exist, also set collection products
+        if (collections.length > 0) {
+          // Filter products that came from collections
+          const productsFromCollections = products.filter(
+            (product) =>
+              product.fromCollection ||
+              collections.some(
+                (c) => product.collectionId === c.id || (product.collections && product.collections.includes(c.id)),
+              ),
+          )
+          setCollectionProducts(productsFromCollections)
+          console.log("Extracted collection products:", productsFromCollections)
+        }
+
+        // Set the appropriate tab based on what's selected
+        if (collections.length > 0 && products.length === 0) {
+          setSelectedTab(1) // Collections tab
+        }
+      } catch (error) {
+        console.error("Error initializing edit form:", error)
+        showToast({ message: "Error loading step data", error: true })
+      }
+
+      setIsLoading(false)
+      console.groupEnd()
+    }
+  }, [open, isEditing, step, showToast])
 
   // Reset form when modal closes
   useEffect(() => {
@@ -38,20 +117,21 @@ export function AddStepModal({ open, onClose, bundle, onSubmit, step = null, isE
       setSelectedTab(0)
       setCollectionProducts([])
       setShowCollectionProductsModal(false)
+      setIsLoading(false)
     }
   }, [open])
 
   // Debug log for initial state
   useEffect(() => {
     if (open) {
-      console.group("AddStepModal - Initial State")
-      console.log("Step data:", step)
-      console.log("Initial selected products:", selectedProducts)
-      console.log("Initial selected collections:", selectedCollections)
-      console.log("Initial collection products:", collectionProducts)
+      console.group("AddStepModal - Current State")
+      console.log("Form data:", formData)
+      console.log("Selected products:", selectedProducts)
+      console.log("Selected collections:", selectedCollections)
+      console.log("Collection products:", collectionProducts)
       console.groupEnd()
     }
-  }, [open, step, selectedProducts, selectedCollections, collectionProducts])
+  }, [open, formData, selectedProducts, selectedCollections, collectionProducts])
 
   const transformConditionsToMinMax = useCallback((conditions) => {
     const condition = conditions[0]
@@ -181,6 +261,7 @@ export function AddStepModal({ open, onClose, bundle, onSubmit, step = null, isE
         primaryAction={{
           content: isEditing ? "Save Changes" : "Add Step",
           onAction: handleSubmit,
+          disabled: isLoading,
         }}
         secondaryActions={[
           {
@@ -190,81 +271,132 @@ export function AddStepModal({ open, onClose, bundle, onSubmit, step = null, isE
         ]}
       >
         <Modal.Section>
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {error && <Banner status="critical">{error}</Banner>}
+          {isLoading ? (
+            <div style={{ padding: "16px" }}>
+              <SkeletonBodyText lines={6} />
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {error && <Banner status="critical">{error}</Banner>}
 
-            <TextField
-              label="Step Name"
-              value={formData.name}
-              onChange={(value) => {
-                setFormData((prev) => ({ ...prev, name: value }))
-                setError("")
-              }}
-              autoComplete="off"
-              placeholder="e.g., Select Monitor"
-              helpText="Will be visible on the storefront"
-            />
+              <TextField
+                label="Step Name"
+                value={formData.name}
+                onChange={(value) => {
+                  setFormData((prev) => ({ ...prev, name: value }))
+                  setError("")
+                }}
+                autoComplete="off"
+                placeholder="e.g., Select Monitor"
+                helpText="Will be visible on the storefront"
+              />
 
-            <Card>
-              <div style={{ padding: "16px" }}>
-                <Tabs tabs={tabs} selected={selectedTab} onSelect={setSelectedTab} />
+              <Card>
+                <div style={{ padding: "16px" }}>
+                  <Tabs tabs={tabs} selected={selectedTab} onSelect={setSelectedTab} />
 
-                <div style={{ marginTop: "16px" }}>
-                  {selectedTab === 0 ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                      <Text>Products selected here will be displayed on this step</Text>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <Button onClick={() => setShowProductSelection(true)}>Add Products</Button>
-                        {selectedProducts.length > 0 && <Text>{selectedProducts.length} Selected</Text>}
+                  <div style={{ marginTop: "16px" }}>
+                    {selectedTab === 0 ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                        <Text>Products selected here will be displayed on this step</Text>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <Button onClick={() => setShowProductSelection(true)}>
+                            {selectedProducts.length > 0 ? "Edit Products" : "Add Products"}
+                          </Button>
+                          {selectedProducts.length > 0 && (
+                            <Text>
+                              {selectedProducts.length} Product{selectedProducts.length !== 1 ? "s" : ""} Selected
+                            </Text>
+                          )}
+                        </div>
+                        {selectedProducts.length > 0 && (
+                          <div style={{ marginTop: "8px", maxHeight: "200px", overflowY: "auto" }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                              {selectedProducts.slice(0, 5).map((product) => (
+                                <div key={product.id} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                  {product.imageUrl && (
+                                    <img
+                                      src={product.imageUrl || "/placeholder.svg"}
+                                      alt={product.title}
+                                      style={{ width: "40px", height: "40px", objectFit: "cover" }}
+                                    />
+                                  )}
+                                  <Text>{product.title}</Text>
+                                </div>
+                              ))}
+                              {selectedProducts.length > 5 && (
+                                <Text>And {selectedProducts.length - 5} more products...</Text>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <div style={{ marginTop: "8px" }}>
+                          <Checkbox
+                            label="Display variants as individual products"
+                            checked={formData.displayVariants}
+                            onChange={(checked) => setFormData((prev) => ({ ...prev, displayVariants: checked }))}
+                          />
+                        </div>
                       </div>
-                      <div style={{ marginTop: "8px" }}>
-                        <Checkbox
-                          label="Display variants as individual products"
-                          checked={formData.displayVariants}
-                          onChange={(checked) => setFormData((prev) => ({ ...prev, displayVariants: checked }))}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                      <Text>Collections selected here will have all their products available in this step</Text>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <Button onClick={() => setShowCollectionSelection(true)}>Select Collections</Button>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                        <Text>Collections selected here will have all their products available in this step</Text>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <Button onClick={() => setShowCollectionSelection(true)}>
+                            {selectedCollections.length > 0 ? "Edit Collections" : "Select Collections"}
+                          </Button>
+                          {selectedCollections.length > 0 && (
+                            <>
+                              <Text>
+                                {selectedCollections.length} Collection{selectedCollections.length !== 1 ? "s" : ""}{" "}
+                                Selected
+                              </Text>
+                              <Button onClick={() => setShowCollectionProductsModal(true)}>
+                                {collectionProducts.length > 0
+                                  ? "Edit Collection Products"
+                                  : "Select Collection Products"}
+                              </Button>
+                            </>
+                          )}
+                        </div>
                         {selectedCollections.length > 0 && (
-                          <>
-                            <Text>{selectedCollections.length} Selected</Text>
-                            <Button onClick={() => setShowCollectionProductsModal(true)}>
-                              Select Collection Products
-                            </Button>
-                          </>
+                          <div style={{ marginTop: "8px", maxHeight: "200px", overflowY: "auto" }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                              {selectedCollections.map((collection) => (
+                                <div key={collection.id} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                  <Text>{collection.title}</Text>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {collectionProducts.length > 0 && (
+                          <Text>Selected {collectionProducts.length} products from collections</Text>
                         )}
                       </div>
-                      {collectionProducts.length > 0 && (
-                        <Text>Selected {collectionProducts.length} products from collections</Text>
-                      )}
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
 
-            <Card>
-              <div style={{ padding: "16px" }}>
-                <div style={{ marginBottom: "16px" }}>
-                  <Text variant="headingMd">Conditions</Text>
-                  <Text tone="subdued" style={{ marginTop: "4px" }}>
-                    Create conditions based on amount or quantity of products added on this step.
-                    <br />
-                    <strong>Note:</strong> Conditions are only valid on this step
-                  </Text>
+              <Card>
+                <div style={{ padding: "16px" }}>
+                  <div style={{ marginBottom: "16px" }}>
+                    <Text variant="headingMd">Conditions</Text>
+                    <Text tone="subdued" style={{ marginTop: "4px" }}>
+                      Create conditions based on amount or quantity of products added on this step.
+                      <br />
+                      <strong>Note:</strong> Conditions are only valid on this step
+                    </Text>
+                  </div>
+                  <ConditionsBuilder
+                    conditions={formData.conditions}
+                    onChange={(conditions) => setFormData((prev) => ({ ...prev, conditions }))}
+                  />
                 </div>
-                <ConditionsBuilder
-                  conditions={formData.conditions}
-                  onChange={(conditions) => setFormData((prev) => ({ ...prev, conditions }))}
-                />
-              </div>
-            </Card>
-          </div>
+              </Card>
+            </div>
+          )}
         </Modal.Section>
       </Modal>
 

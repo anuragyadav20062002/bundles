@@ -8,7 +8,20 @@ import { addDocumentResponseHeaders } from "./shopify.server"
 const ABORT_DELAY = 5000
 
 export default async function handleRequest(request, responseStatusCode, responseHeaders, remixContext) {
-  addDocumentResponseHeaders(request, responseHeaders)
+  try {
+    // Try to add document response headers, but don't fail if the function doesn't exist
+    if (typeof addDocumentResponseHeaders === "function") {
+      addDocumentResponseHeaders(request, responseHeaders)
+    }
+  } catch (error) {
+    console.error("Error adding document response headers:", error)
+    // Add security headers manually if the function fails
+    responseHeaders.set("X-Frame-Options", "ALLOWALL")
+    responseHeaders.set(
+      "Content-Security-Policy",
+      "frame-ancestors 'self' https://*.myshopify.com https://admin.shopify.com;",
+    )
+  }
 
   const userAgent = request.headers.get("user-agent")
   const callbackName = isbot(userAgent ?? "") ? "onAllReady" : "onShellReady"
@@ -23,7 +36,7 @@ export default async function handleRequest(request, responseStatusCode, respons
 
         responseHeaders.set("Content-Type", "text/html")
 
-        // Add security headers
+        // Add security headers again to ensure they're set
         responseHeaders.set("X-Frame-Options", "ALLOWALL")
         responseHeaders.set(
           "Content-Security-Policy",

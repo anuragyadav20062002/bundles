@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react"
 import {
-  Modal,
+  Page,
   Card,
   TextField,
   Button,
@@ -13,9 +13,11 @@ import {
   Select,
   Checkbox,
   Banner,
+  Layout,
 } from "@shopify/polaris"
 import { Plus, Trash2 } from "lucide-react"
 import { useToast } from "../ToastProvider"
+import { useNavigate } from "@remix-run/react"
 
 const DISCOUNT_TYPES = [
   { label: "Percentage Off", value: "percentage" },
@@ -44,15 +46,13 @@ const DISCOUNT_TYPES = [
 
 /**
  * @typedef {Object} PricingModalProps
- * @property {boolean} open
- * @property {() => void} onClose
  * @property {Bundle} bundle
  * @property {(data: any) => void} onSave
  */
 
-/** @type {[Rule[], React.Dispatch<React.SetStateAction<Rule[]>>]} */
-export function PricingModal({ open, onClose, bundle, onSave }) {
+export function PricingModal({ bundle, onSave }) {
   const { showToast } = useToast()
+  const navigate = useNavigate()
   const [discountEnabled, setDiscountEnabled] = useState(bundle?.pricing?.status || false)
   const [discountType, setDiscountType] = useState(bundle?.pricing?.type || "percentage")
   /** @type {[Rule[], React.Dispatch<React.SetStateAction<Rule[]>>]} */
@@ -123,170 +123,170 @@ export function PricingModal({ open, onClose, bundle, onSave }) {
       if (!response.ok) throw new Error("Failed to save pricing rules")
 
       showToast({ message: "Pricing rules saved successfully" })
-      onClose()
+      navigate(`/app/bundles/${bundle.id}`)
     } catch (error) {
       showToast({ message: "Failed to save pricing rules", error: true })
     }
-  }, [bundle.id, discountEnabled, discountType, rules, showProgressBar, showOnFooter, onClose, showToast])
+  }, [bundle.id, discountEnabled, discountType, rules, showProgressBar, showOnFooter, navigate, showToast])
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
+    <Page
+      backAction={{ content: "Back to Bundle", onAction: () => navigate(`/app/bundles/${bundle.id}`) }}
       title="Bundle Pricing & Discounts"
       primaryAction={{
-        content: "Save",
+        content: "Save Changes",
         onAction: handleSave,
       }}
       secondaryActions={[
         {
-          content: "Cancel",
-          onAction: onClose,
+          content: "Discard",
+          onAction: () => navigate(`/app/bundles/${bundle.id}`),
         },
       ]}
-      large
     >
-      <Modal.Section>
-        <BlockStack gap="4">
-          <Card>
-            <BlockStack gap="4">
-              <Box padding="4" borderBlockEndWidth="1" borderColor="border">
-                <InlineStack align="space-between">
-                  <Text variant="headingMd" as="h2">
-                    Discount Settings
-                  </Text>
-                  <Checkbox label="Enable discounts" checked={discountEnabled} onChange={setDiscountEnabled} />
-                </InlineStack>
-              </Box>
-
-              {discountEnabled && (
-                <Box padding="4">
-                  <BlockStack gap="4">
-                    <Text tone="subdued">Set up to 10 discount rules from lowest to highest.</Text>
-                    <Banner>
-                      Tip: Discounts are calculated based on the products in cart, make sure to add the "Default
-                      Product" quantity or amount while configuring discounts.
-                    </Banner>
-
-                    <Select
-                      label="Discount Type"
-                      options={DISCOUNT_TYPES}
-                      value={discountType}
-                      onChange={setDiscountType}
-                    />
-
-                    {rules.map((rule, index) => (
-                      <Card key={rule.id}>
-                        <Box padding="4">
-                          <BlockStack gap="4">
-                            <InlineStack align="space-between">
-                              <Text variant="headingSm">Rule #{rule.id}</Text>
-                              {index > 0 && (
-                                <Button
-                                  tone="critical"
-                                  icon={<Trash2 className="h-5 w-5" />}
-                                  onClick={() => handleRemoveRule(rule.id)}
-                                >
-                                  Remove
-                                </Button>
-                              )}
-                            </InlineStack>
-
-                            <div className="grid grid-cols-4 gap-4">
-                              <Select
-                                label="Discount on"
-                                options={[{ label: "Quantity", value: "quantity" }]}
-                                value={rule.discountOn}
-                                onChange={(value) => handleRuleChange(rule.id, "discountOn", value)}
-                              />
-                              <TextField
-                                label="Minimum quantity"
-                                type="number"
-                                value={rule.minQuantity}
-                                onChange={(value) => handleRuleChange(rule.id, "minQuantity", value)}
-                                min="1"
-                              />
-                              <TextField
-                                label={`${discountType === "percentage" ? "Percentage" : "Amount"} Off`}
-                                type="number"
-                                value={rule.value}
-                                onChange={(value) => handleRuleChange(rule.id, "value", value)}
-                                min="0"
-                                suffix={discountType === "percentage" ? "%" : "$"}
-                              />
-                              <TextField
-                                label="Code"
-                                value={rule.code}
-                                onChange={(value) => handleRuleChange(rule.id, "code", value)}
-                              />
-                            </div>
-                          </BlockStack>
-                        </Box>
-                      </Card>
-                    ))}
-
-                    {rules.length < 10 && (
-                      <Button icon={<Plus className="h-5 w-5" />} onClick={handleAddRule}>
-                        Add new rule
-                      </Button>
-                    )}
-                  </BlockStack>
-                </Box>
-              )}
-            </BlockStack>
-          </Card>
-
-          {discountEnabled && (
+      <Layout>
+        <Layout.Section>
+          <BlockStack gap="4">
             <Card>
               <BlockStack gap="4">
                 <Box padding="4" borderBlockEndWidth="1" borderColor="border">
                   <InlineStack align="space-between">
                     <Text variant="headingMd" as="h2">
-                      Discount Messaging
+                      Discount Settings
                     </Text>
-                    <Checkbox label="Enable multi-language" checked={multiLanguage} onChange={setMultiLanguage} />
+                    <Checkbox label="Enable discounts" checked={discountEnabled} onChange={setDiscountEnabled} />
                   </InlineStack>
                 </Box>
 
-                <Box padding="4">
-                  <BlockStack gap="4">
-                    <InlineStack gap="4">
-                      <Checkbox label="Show on footer" checked={showOnFooter} onChange={setShowOnFooter} />
-                      <Checkbox
-                        label="Show discount progress bar"
-                        checked={showProgressBar}
-                        onChange={setShowProgressBar}
-                      />
-                    </InlineStack>
-
+                {discountEnabled && (
+                  <Box padding="4">
                     <BlockStack gap="4">
-                      <TextField
-                        label="Rule 1"
-                        value={messages.rule1}
-                        onChange={(value) => setMessages((prev) => ({ ...prev, rule1: value }))}
-                        multiline={3}
+                      <Text tone="subdued">Set up to 10 discount rules from lowest to highest.</Text>
+                      <Banner>
+                        Tip: Discounts are calculated based on the products in cart, make sure to add the "Default
+                        Product" quantity or amount while configuring discounts.
+                      </Banner>
+
+                      <Select
+                        label="Discount Type"
+                        options={DISCOUNT_TYPES}
+                        value={discountType}
+                        onChange={setDiscountType}
                       />
-                      <TextField
-                        label="Rule 2"
-                        value={messages.rule2}
-                        onChange={(value) => setMessages((prev) => ({ ...prev, rule2: value }))}
-                        multiline={3}
-                      />
-                      <TextField
-                        label="Discount Success Message"
-                        value={messages.success}
-                        onChange={(value) => setMessages((prev) => ({ ...prev, success: value }))}
-                        multiline={3}
-                      />
+
+                      {rules.map((rule, index) => (
+                        <Card key={rule.id}>
+                          <Box padding="4">
+                            <BlockStack gap="4">
+                              <InlineStack align="space-between">
+                                <Text variant="headingSm">Rule #{rule.id}</Text>
+                                {index > 0 && (
+                                  <Button
+                                    tone="critical"
+                                    icon={<Trash2 className="h-5 w-5" />}
+                                    onClick={() => handleRemoveRule(rule.id)}
+                                  >
+                                    Remove
+                                  </Button>
+                                )}
+                              </InlineStack>
+
+                              <div className="grid grid-cols-4 gap-4">
+                                <Select
+                                  label="Discount on"
+                                  options={[{ label: "Quantity", value: "quantity" }]}
+                                  value={rule.discountOn}
+                                  onChange={(value) => handleRuleChange(rule.id, "discountOn", value)}
+                                />
+                                <TextField
+                                  label="Minimum quantity"
+                                  type="number"
+                                  value={rule.minQuantity}
+                                  onChange={(value) => handleRuleChange(rule.id, "minQuantity", value)}
+                                  min="1"
+                                />
+                                <TextField
+                                  label={`${discountType === "percentage" ? "Percentage" : "Amount"} Off`}
+                                  type="number"
+                                  value={rule.value}
+                                  onChange={(value) => handleRuleChange(rule.id, "value", value)}
+                                  min="0"
+                                  suffix={discountType === "percentage" ? "%" : "$"}
+                                />
+                                <TextField
+                                  label="Code"
+                                  value={rule.code}
+                                  onChange={(value) => handleRuleChange(rule.id, "code", value)}
+                                />
+                              </div>
+                            </BlockStack>
+                          </Box>
+                        </Card>
+                      ))}
+
+                      {rules.length < 10 && (
+                        <Button icon={<Plus className="h-5 w-5" />} onClick={handleAddRule}>
+                          Add new rule
+                        </Button>
+                      )}
                     </BlockStack>
-                  </BlockStack>
-                </Box>
+                  </Box>
+                )}
               </BlockStack>
             </Card>
-          )}
-        </BlockStack>
-      </Modal.Section>
-    </Modal>
+
+            {discountEnabled && (
+              <Card>
+                <BlockStack gap="4">
+                  <Box padding="4" borderBlockEndWidth="1" borderColor="border">
+                    <InlineStack align="space-between">
+                      <Text variant="headingMd" as="h2">
+                        Discount Messaging
+                      </Text>
+                      <Checkbox label="Enable multi-language" checked={multiLanguage} onChange={setMultiLanguage} />
+                    </InlineStack>
+                  </Box>
+
+                  <Box padding="4">
+                    <BlockStack gap="4">
+                      <InlineStack gap="4">
+                        <Checkbox label="Show on footer" checked={showOnFooter} onChange={setShowOnFooter} />
+                        <Checkbox
+                          label="Show discount progress bar"
+                          checked={showProgressBar}
+                          onChange={setShowProgressBar}
+                        />
+                      </InlineStack>
+
+                      <BlockStack gap="4">
+                        <TextField
+                          label="Rule 1"
+                          value={messages.rule1}
+                          onChange={(value) => setMessages((prev) => ({ ...prev, rule1: value }))}
+                          multiline={3}
+                        />
+                        <TextField
+                          label="Rule 2"
+                          value={messages.rule2}
+                          onChange={(value) => setMessages((prev) => ({ ...prev, rule2: value }))}
+                          multiline={3}
+                        />
+                        <TextField
+                          label="Discount Success Message"
+                          value={messages.success}
+                          onChange={(value) => setMessages((prev) => ({ ...prev, success: value }))}
+                          multiline={3}
+                        />
+                      </BlockStack>
+                    </BlockStack>
+                  </Box>
+                </BlockStack>
+              </Card>
+            )}
+          </BlockStack>
+        </Layout.Section>
+      </Layout>
+    </Page>
   )
 }
 

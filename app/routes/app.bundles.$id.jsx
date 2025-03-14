@@ -2,15 +2,15 @@
 
 import { json } from "@remix-run/node"
 import { useLoaderData, useNavigate, useFetcher } from "@remix-run/react"
-import { Page, Layout, Card, Button, Text, BlockStack, InlineStack } from "@shopify/polaris"
+import { Page, Card, Button, Text, BlockStack, InlineStack } from "@shopify/polaris"
 import { authenticate } from "../shopify.server"
 import { prisma } from "../db.server"
 import { useState, useCallback } from "react"
 import { useToast } from "../components/ToastProvider"
 import { AddStepModal } from "../components/modals/AddStepModal"
-import { PricingModal } from "../components/modals/PricingModal"
 import { PublishBundleModal } from "../components/modals/PublishBundleModal"
-import { CopyCheck, Pencil, Trash2, Upload } from "lucide-react"
+import { PricingConfigModal } from "../components/modals/PricingConfigModal"
+import { Rocket } from "lucide-react"
 
 /**
  * @typedef {import('../types').Bundle} Bundle
@@ -220,7 +220,6 @@ export const action = async ({ request, params }) => {
 }
 
 export default function BundleDetails() {
-  /** @type {LoaderData} */
   const { bundle } = useLoaderData()
   const navigate = useNavigate()
   const fetcher = useFetcher()
@@ -230,8 +229,8 @@ export default function BundleDetails() {
   const [showEditStep, setShowEditStep] = useState(false)
   const [showPublishModal, setShowPublishModal] = useState(false)
   const [selectedStep, setSelectedStep] = useState(null)
-  const [showPricing, setShowPricing] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
+  const [showPricingModal, setShowPricingModal] = useState(false)
 
   /**
    * @param {BundleStep} step
@@ -250,7 +249,7 @@ export default function BundleDetails() {
       formData.append("intent", "clone-step")
       formData.append("stepId", step.id)
 
-      await fetcher.submit(formData, { method: "post" })
+      fetcher.submit(formData, { method: "post" })
       showToast({ message: "Step cloned successfully" })
     } catch (error) {
       showToast({ message: "Failed to clone step", error: true })
@@ -268,7 +267,7 @@ export default function BundleDetails() {
       formData.append("intent", "delete-step")
       formData.append("stepId", stepId)
 
-      await fetcher.submit(formData, { method: "post" })
+      fetcher.submit(formData, { method: "post" })
       showToast({ message: "Step deleted successfully" })
     } catch (error) {
       showToast({ message: "Failed to delete step", error: true })
@@ -303,13 +302,6 @@ export default function BundleDetails() {
     <Page
       backAction={{ content: "Bundles", onAction: () => navigate("/app") }}
       title={bundle.name}
-      primaryAction={{
-        content: isPublishing ? "Publishing..." : "Publish",
-        icon: <Upload style={{ height: "20px", width: "20px" }} />,
-        onAction: () => setShowPublishModal(true),
-        loading: isPublishing,
-        disabled: isPublishing,
-      }}
       secondaryActions={[
         {
           content: "Add Step",
@@ -317,61 +309,61 @@ export default function BundleDetails() {
         },
       ]}
     >
-      <Layout>
-        <Layout.Section>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        {/* Left Side - Bundle Steps & Bundle Publish */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Bundle Steps Card */}
           <Card>
-            <div style={{ padding: "24px" }}>
-              <BlockStack gap="4">
-                <div style={{ borderBottom: "1px solid var(--p-border-subdued)", paddingBottom: "16px" }}>
-                  <Text variant="headingMd" as="h2">
-                    Bundle Steps
-                  </Text>
-                </div>
-
+            <div style={{ padding: "16px" }}>
+              <BlockStack gap="3">
+                <Text variant="headingMd" as="h2">
+                  Bundle Steps
+                </Text>
                 {bundle.steps.length === 0 ? (
-                  <div style={{ padding: "24px 0", textAlign: "center" }}>
+                  <div style={{ padding: "12px 0", textAlign: "center" }}>
                     <Text tone="subdued">No steps yet. Click "Add Step" to create your first step.</Text>
                   </div>
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                    {bundle.steps.map((step) => (
-                      <div
-                        key={step.id}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          borderBottom: "1px solid var(--p-border-subdued)",
-                          paddingTop: "16px",
-                          paddingBottom: "16px",
-                        }}
-                      >
-                        <div style={{ flexGrow: 1 }}>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    {bundle.steps.map((step, index) => (
+                      <div key={step.id}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "12px 0",
+                          }}
+                        >
                           <Text variant="bodyMd" fontWeight="bold">
                             {step.name}
                           </Text>
+                          <div style={{ display: "flex", gap: "8px" }}>
+                            <Button size="slim" onClick={() => handleEditStep(step)}>
+                              Edit
+                            </Button>
+                            <Button size="slim" variant="primary" monochrome onClick={() => handleCloneStep(step)}>
+                              Clone
+                            </Button>
+                            <Button
+                              size="slim"
+                              variant="primary"
+                              tone="critical"
+                              onClick={() => handleDeleteStep(step.id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         </div>
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <Button
-                            onClick={() => handleEditStep(step)}
-                            icon={<Pencil style={{ height: "20px", width: "20px" }} />}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            onClick={() => handleCloneStep(step)}
-                            icon={<CopyCheck style={{ height: "20px", width: "20px" }} />}
-                          >
-                            Clone
-                          </Button>
-                          <Button
-                            tone="critical"
-                            onClick={() => handleDeleteStep(step.id)}
-                            icon={<Trash2 style={{ height: "20px", width: "20px" }} />}
-                          >
-                            Delete
-                          </Button>
-                        </div>
+                        {index < bundle.steps.length - 1 && (
+                          <div
+                            style={{
+                              height: "1px",
+                              background: "var(--p-border-subdued)",
+                              margin: "0",
+                            }}
+                          />
+                        )}
                       </div>
                     ))}
                   </div>
@@ -380,26 +372,48 @@ export default function BundleDetails() {
             </div>
           </Card>
 
-          {/* Pricing Card */}
-          <div style={{ marginTop: "24px" }}>
-            <Card>
-              <div style={{ padding: "24px" }}>
-                <InlineStack align="space-between">
-                  <BlockStack gap="1">
-                    <Text variant="headingMd" as="h2">
-                      Bundle Pricing
-                    </Text>
-                    <Text tone="subdued">Configure discounts and pricing rules</Text>
-                  </BlockStack>
-                  <Button onClick={() => setShowPricing(true)} primary>
-                    Configure Pricing
-                  </Button>
-                </InlineStack>
-              </div>
-            </Card>
-          </div>
-        </Layout.Section>
-      </Layout>
+          {/* Bundle Publish Card */}
+          <Card>
+            <div style={{ padding: "16px" }}>
+              <InlineStack align="space-between">
+                <BlockStack gap="1">
+                  <Text variant="headingMd" as="h2">
+                    Bundle Publish
+                  </Text>
+                  <Text tone="subdued">Make bundle available in your store</Text>
+                </BlockStack>
+                <Button
+                  primary
+                  icon={<Rocket style={{ height: "20px", width: "20px" }} />}
+                  onClick={() => setShowPublishModal(true)}
+                  loading={isPublishing}
+                  disabled={isPublishing}
+                >
+                  {isPublishing ? "Publishing..." : "Publish"}
+                </Button>
+              </InlineStack>
+            </div>
+          </Card>
+        </div>
+
+        {/* Right Side - Pricing */}
+        <div>
+          {/* Bundle Pricing Card */}
+          <Card>
+            <div style={{ padding: "16px" }}>
+              <InlineStack align="space-between">
+                <BlockStack gap="1">
+                  <Text variant="headingMd" as="h2">
+                    Bundle Pricing
+                  </Text>
+                  <Text tone="subdued">Configure discounts and pricing rules</Text>
+                </BlockStack>
+                <Button onClick={() => setShowPricingModal(true)}>Configure Pricing</Button>
+              </InlineStack>
+            </div>
+          </Card>
+        </div>
+      </div>
 
       {/* Modals */}
       <AddStepModal
@@ -416,7 +430,7 @@ export default function BundleDetails() {
             formData.append("collections", data.collections)
             formData.append("products", data.products)
 
-            await fetcher.submit(formData, { method: "post" })
+            fetcher.submit(formData, { method: "post" })
             setShowAddStep(false)
             showToast({ message: "Step created successfully" })
           } catch (error) {
@@ -445,34 +459,12 @@ export default function BundleDetails() {
             formData.append("collections", data.collections)
             formData.append("products", data.products)
 
-            await fetcher.submit(formData, { method: "post" })
+            fetcher.submit(formData, { method: "post" })
             setShowEditStep(false)
             setSelectedStep(null)
             showToast({ message: "Step updated successfully" })
           } catch (error) {
             showToast({ message: "Failed to update step", error: true })
-          }
-        }}
-      />
-
-      <PricingModal
-        open={showPricing}
-        onClose={() => setShowPricing(false)}
-        bundle={bundle}
-        onSave={async (pricingData) => {
-          try {
-            const response = await fetch(`/api/bundles/${bundle.id}/pricing`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(pricingData),
-            })
-
-            if (!response.ok) throw new Error("Failed to save pricing")
-
-            setShowPricing(false)
-            showToast({ message: "Pricing rules saved successfully" })
-          } catch (error) {
-            showToast({ message: "Failed to save pricing rules", error: true })
           }
         }}
       />
@@ -485,6 +477,15 @@ export default function BundleDetails() {
         }}
         bundle={bundle}
         onPublish={handlePublish}
+      />
+      <PricingConfigModal
+        open={showPricingModal}
+        onClose={() => setShowPricingModal(false)}
+        bundle={bundle}
+        onSave={(data) => {
+          // Refresh the page to show updated pricing data
+          navigate(".", { replace: true })
+        }}
       />
     </Page>
   )

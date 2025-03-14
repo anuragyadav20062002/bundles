@@ -1,82 +1,111 @@
 {% assign product_type = product.type | downcase %}
 
 {% for bundle_entry in shop.metafields.bundles %}
-  {% assign bundle = bundle_entry[1].value | parse_json %}
-  {% assign should_display = false %}
-  
-  {% if bundle.matching.type == 'productType' %}
-    {% for rule in bundle.matching.rules %}
-      {% if rule == product_type %}
-        {% assign should_display = true %}
-        {% break %}
-      {% endif %}
-    {% endfor %}
-  {% endif %}
+{% assign bundle = bundle_entry[1].value | parse_json %}
+{% assign should_display = false %}
 
-  {% if should_display and bundle.status == 'active' %}
-    <div class="bundle-builder" data-bundle-id="{{ bundle.id }}">
+{% if bundle.matching.type == 'productType' %}
+  {% for rule in bundle.matching.rules %}
+    {% if rule == product_type %}
+      {% assign should_display = true %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+{% if should_display and bundle.status == 'active' %}
+  <div class="bundle-builder" data-bundle-id="{{ bundle.id }}" data-bundle-name="{{ bundle.name }}">
+    <div class="bundle-builder__steps">
       {% for step in bundle.steps %}
         <div class="bundle-builder__step" 
              data-step-id="{{ step.id }}" 
              data-min-quantity="{{ step.minQuantity | default: 1 }}" 
              data-max-quantity="{{ step.maxQuantity | default: 1 }}">
           <button type="button" class="bundle-builder__step-toggle">
-            <div class="bundle-builder__step-info">
-              <h3 class="bundle-builder__step-title">{{ step.name }}</h3>
-              <p class="bundle-builder__step-subtitle">
-                Select {{ step.minQuantity | default: 1 }}{% if step.maxQuantity and step.maxQuantity != step.minQuantity %}-{{ step.maxQuantity }}{% endif %} item{% if step.maxQuantity > 1 %}s{% endif %}
-              </p>
-            </div>
             <div class="bundle-builder__step-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
             </div>
-          </button>
-
-          <div class="bundle-builder__step-content">
-            <div class="bundle-builder__products-row">
-              {% for product in step.products %}
-                <div class="bundle-builder__product" 
-                     data-product-id="{{ product.id }}"
-                     data-variants="{{ product.variants | json | escape }}">
-                  <div class="bundle-builder__product-image">
-                    {% if product.image != blank %}
-                      <img src="{{ product.image }}" alt="{{ product.title }}" loading="lazy">
-                    {% endif %}
-                  </div>
-                  <div class="bundle-builder__product-info">
-                    <h4 class="bundle-builder__product-title">{{ product.title }}</h4>
-                    {% if product.variants.size > 0 %}
-                      <div class="bundle-builder__product-price">
-                        {{ product.variants[0].price | money }}
-                      </div>
-                    {% endif %}
-                  </div>
-                </div>
-              {% endfor %}
+            <div class="bundle-builder__step-info">
+              <h3 class="bundle-builder__step-title">Add {{ step.name }}</h3>
+              <p class="bundle-builder__step-subtitle">
+                Select {{ step.minQuantity | default: 1 }}{% if step.maxQuantity and step.maxQuantity != step.minQuantity %}-{{ step.maxQuantity }}{% endif %} item{% if step.maxQuantity > 1 %}s{% endif %}
+              </p>
             </div>
+          </button>
+          
+          {% if step.products.size > 0 %}
+            <div class="bundle-builder__selected-count" style="display: none;">0</div>
+          {% endif %}
+
+          <!-- Products for this step - hidden by default -->
+          <div class="bundle-builder__step-products" style="display: none;">
+            {% for product in step.products %}
+              <div class="bundle-builder__product" 
+                   data-product-id="{{ product.id }}"
+                   data-variants="{{ product.variants | json | escape }}">
+                <div class="bundle-builder__product-image">
+                  {% if product.image != blank %}
+                    <img src="{{ product.image }}" alt="{{ product.title }}" loading="lazy">
+                  {% endif %}
+                </div>
+                <div class="bundle-builder__product-info">
+                  <h4 class="bundle-builder__product-title">{{ product.title }}</h4>
+                  {% if product.variants.size > 0 %}
+                    <div class="bundle-builder__product-price">
+                      {{ product.variants[0].price | money }}
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
           </div>
         </div>
       {% endfor %}
+    </div>
 
-      <div class="bundle-builder__footer">
-        <button type="button" class="bundle-builder__add-cart" disabled>
-          Add Bundle to Cart
-        </button>
+    <!-- Modal -->
+    <div class="bundle-builder__modal">
+      <div class="bundle-builder__modal-content">
+        <div class="bundle-builder__modal-header">
+          <h2 class="bundle-builder__modal-title"></h2>
+          <button type="button" class="bundle-builder__modal-close">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="bundle-builder__modal-body">
+          <div class="bundle-builder__products-row">
+            <!-- Products will be moved here -->
+          </div>
+        </div>
+        <div class="bundle-builder__modal-footer">
+          <button type="button" class="bundle-builder__modal-button bundle-builder__modal-cancel">Cancel</button>
+          <button type="button" class="bundle-builder__modal-button bundle-builder__modal-button--primary bundle-builder__modal-confirm">Confirm Selection</button>
+        </div>
       </div>
     </div>
-  {% endif %}
+
+    <div class="bundle-builder__footer">
+      <button type="button" class="bundle-builder__add-cart" disabled>
+        Add Bundle to Cart
+      </button>
+    </div>
+  </div>
+{% endif %}
 {% endfor %}
 
 {% schema %}
 {
-  "name": "Bundle Builder",
-  "target": "section",
-  "stylesheet": "bundle-widget.css",
-  "javascript": "bundle-widget.js",
-  "settings": []
+"name": "Bundle Builder",
+"target": "section",
+"stylesheet": "bundle-widget.css",
+"javascript": "bundle-widget.js",
+"settings": []
 }
 {% endschema %}
 

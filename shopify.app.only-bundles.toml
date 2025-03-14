@@ -1,0 +1,28 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "c99f84ec259a925579caccca0c34af32"
+application_url = "https://brick-tu-titanium-removable.trycloudflare.com"
+embedded = true
+name = "only-bundles"
+handle = "only-bundles"
+
+[build]
+include_config_on_deploy = true
+automatically_update_urls_on_dev = true
+
+[webhooks]
+api_version = "2025-01"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products,read_themes,write_products,write_themes"
+
+[auth]
+redirect_urls = [
+  "https://brick-tu-titanium-removable.trycloudflare.com/auth/callback",
+  "https://brick-tu-titanium-removable.trycloudflare.com/auth/shopify/callback",
+  "https://brick-tu-titanium-removable.trycloudflare.com/api/auth/callback"
+]
+
+[pos]
+embedded = false
