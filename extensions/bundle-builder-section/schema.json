@@ -1,0 +1,34 @@
+{
+    "name": "Bundle Builder Section",
+    "tag": "section",
+    "class": "section",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Bundle Builder Settings"
+      },
+      {
+        "type": "paragraph",
+        "content": "This section displays bundle builders on product pages based on matching rules."
+      }
+    ],
+    "blocks": [
+      {
+        "type": "bundle",
+        "name": "Bundle",
+        "limit": 1
+      }
+    ],
+    "presets": [
+      {
+        "name": "Bundle Builder",
+        "blocks": [
+          {
+            "type": "bundle"
+          }
+        ]
+      }
+    ]
+  }
+  
+  

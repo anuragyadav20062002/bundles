@@ -1,0 +1,195 @@
+{% comment %}
+Bundle Cart Debug Block
+This adds detailed debugging information to the cart page
+{% endcomment %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  console.log("=== BUNDLE CART DEBUG LOADED ===");
+
+  // Function to inspect cart items
+  function inspectCart() {
+    console.log("Inspecting cart for bundle properties...");
+    
+    // Get all cart items
+    const cartItems = document.querySelectorAll('.cart-item');
+    console.log(`Found ${cartItems.length} cart items`);
+    
+    // Process cart items
+    let bundleItemsFound = 0;
+    let parentItemsFound = 0;
+    let bundleGroups = {};
+    
+    cartItems.forEach((item, index) => {
+      console.log(`Inspecting cart item ${index + 1}`);
+      
+      // Look for properties
+      const properties = item.querySelectorAll('[data-property], .cart-item__properties li, .product-option');
+      
+      if (properties.length > 0) {
+        console.log(`  Found ${properties.length} properties`);
+        
+        let isBundleItem = false;
+        let isBundleParent = false;
+        let bundleId = null;
+        let bundleName = null;
+        
+        properties.forEach(prop => {
+          const propText = prop.textContent.trim();
+          console.log(`  Property: ${propText}`);
+          
+          if (propText.includes('bundle_id')) {
+            isBundleItem = true;
+            bundleId = propText.split(':')[1]?.trim();
+            
+            // Create a new bundle group if it doesn't exist
+            if (bundleId && !bundleGroups[bundleId]) {
+              bundleGroups[bundleId] = {
+                items: [],
+                parent: null
+              };
+            }
+          }
+          
+          if (propText.includes('is_bundle_parent') && propText.includes('true')) {
+            isBundleParent = true;
+          }
+          
+          if (propText.includes('bundle_name')) {
+            bundleName = propText.split(':')[1]?.trim();
+          }
+        });
+        
+        if (isBundleItem && bundleId) {
+          bundleItemsFound++;
+          console.log(`  This is a bundle item with bundle ID: ${bundleId}`);
+          
+          // Add to bundle group
+          if (bundleGroups[bundleId]) {
+            const itemInfo = {
+              element: item,
+              isParent: isBundleParent,
+              name: item.querySelector('.cart-item__name')?.textContent?.trim() || 'Unknown Item',
+              bundleName: bundleName
+            };
+            
+            bundleGroups[bundleId].items.push(itemInfo);
+            
+            if (isBundleParent) {
+              bundleGroups[bundleId].parent = itemInfo;
+              parentItemsFound++;
+              console.log(`  This is a bundle parent item`);
+            }
+          }
+        }
+      } else {
+        console.log(`  No properties found`);
+      }
+    });
+    
+    console.log(`Bundle summary: ${bundleItemsFound} bundle items, ${parentItemsFound} parent items`);
+    console.log('Bundle groups:', bundleGroups);
+    
+    // Add debug info to the page
+    const debugInfo = document.createElement('div');
+    debugInfo.style.padding = '10px';
+    debugInfo.style.margin = '10px 0';
+    debugInfo.style.border = '1px solid red';
+    debugInfo.style.backgroundColor = '#ffeeee';
+    
+    // Create bundle details
+    let bundleDetails = '';
+    Object.keys(bundleGroups).forEach(bundleId => {
+      const group = bundleGroups[bundleId];
+      bundleDetails += `
+        <div style="margin-bottom: 10px; padding: 5px; border: 1px dashed #999;">
+          <h4 style="margin: 0 0 5px 0;">Bundle ID: ${bundleId}</h4>
+          <p>Parent: ${group.parent ? group.parent.name : 'None'}</p>
+          <p>Components (${group.items.length}):</p>
+          <ul>
+            ${group.items.map(item => `<li>${item.name} ${item.isParent ? '(parent)' : ''}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+    });
+    
+    debugInfo.innerHTML = `
+      <h3>Bundle Cart Debug Info</h3>
+      <p>Cart items: ${cartItems.length}</p>
+      <p>Bundle items found: ${bundleItemsFound}</p>
+      <p>Parent items found: ${parentItemsFound}</p>
+      <p>Bundle groups: ${Object.keys(bundleGroups).length}</p>
+      
+      <div>
+        <h4>Bundle Details:</h4>
+        ${bundleDetails || '<p>No bundles found</p>'}
+      </div>
+      
+      <p><small>Check browser console for more details</small></p>
+      
+      <div>
+        <h4>Function Status:</h4>
+        <div id="function-status-indicator" style="padding: 5px; background-color: #ffcc00; display: inline-block; margin-bottom: 10px;">
+          Checking function status...
+        </div>
+        
+        <h4>Troubleshooting Steps:</h4>
+        <ol>
+          <li>Verify function is deployed: <code>npm run shopify app function build && npm run shopify app deploy</code></li>
+          <li>Verify function is enabled in Shopify admin: Settings → Checkout → Order processing</li>
+          <li>Check if the function is registered: Go to Shopify admin → Settings → Apps and sales channels → Develop apps → Your app → Extensions</li>
+          <li>Check if the function has the correct permissions: Go to Shopify admin → Settings → Apps and sales channels → Your app → App permissions</li>
+          <li>Check if the function is being called by adding <code>?debug=true</code> to the cart URL</li>
+        </ol>
+      </div>
+    `;
+    
+    // Insert after the cart title
+    const cartTitle = document.querySelector('h1');
+    if (cartTitle && cartTitle.textContent.toLowerCase().includes('cart')) {
+      cartTitle.parentNode.insertBefore(debugInfo, cartTitle.nextSibling);
+    } else {
+      // Fallback - add to the top of the cart
+      const cartContainer = document.querySelector('.cart');
+      if (cartContainer) {
+        cartContainer.insertBefore(debugInfo, cartContainer.firstChild);
+      }
+    }
+    
+    // Check function status (this is just a simulation since we can't directly check function status from the client)
+    setTimeout(() => {
+      const statusIndicator = document.getElementById('function-status-indicator');
+      if (statusIndicator) {
+        if (bundleItemsFound > 0 && parentItemsFound > 0 && Object.keys(bundleGroups).length > 0) {
+          // If items are not yet merged but should be
+          if (bundleItemsFound === Object.keys(bundleGroups).reduce((sum, key) => sum + bundleGroups[key].items.length, 0)) {
+            statusIndicator.style.backgroundColor = '#ffcc00';
+            statusIndicator.textContent = 'Function may be registered but not transforming cart correctly';
+          } else {
+            statusIndicator.style.backgroundColor = '#00cc00';
+            statusIndicator.textContent = 'Function appears to be working';
+          }
+        } else {
+          statusIndicator.style.backgroundColor = '#ff0000';
+          statusIndicator.textContent = 'Function may not be registered or active';
+        }
+      }
+    }, 1000);
+  }
+
+  // Run inspection on page load
+  inspectCart();
+
+  // Also run when cart is updated
+  document.addEventListener('cart:updated', inspectCart);
+});
+</script>
+
+{% schema %}
+{
+  "name": "Bundle Cart Debug",
+  "target": "body",
+  "settings": []
+}
+{% endschema %}
+

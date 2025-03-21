@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "c99f84ec259a925579caccca0c34af32"
-application_url = "https://brick-tu-titanium-removable.trycloudflare.com"
+application_url = "https://sun-determine-lithuania-dear.trycloudflare.com"
 embedded = true
 name = "only-bundles"
 handle = "only-bundles"
@@ -19,9 +19,9 @@ scopes = "read_products,read_themes,write_products,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://brick-tu-titanium-removable.trycloudflare.com/auth/callback",
-  "https://brick-tu-titanium-removable.trycloudflare.com/auth/shopify/callback",
-  "https://brick-tu-titanium-removable.trycloudflare.com/api/auth/callback"
+  "https://sun-determine-lithuania-dear.trycloudflare.com/auth/callback",
+  "https://sun-determine-lithuania-dear.trycloudflare.com/auth/shopify/callback",
+  "https://sun-determine-lithuania-dear.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
