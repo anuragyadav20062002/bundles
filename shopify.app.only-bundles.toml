@@ -1,10 +1,10 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "c99f84ec259a925579caccca0c34af32"
-application_url = "https://sun-determine-lithuania-dear.trycloudflare.com"
+client_id = "3baf52e19aaa7d8e288d0ee5c55a3d7e"
+application_url = "https://interfaces-younger-cold-menus.trycloudflare.com"
 embedded = true
 name = "only-bundles"
-handle = "only-bundles"
+handle = "only-bundles-5"
 
 [build]
 include_config_on_deploy = true
@@ -19,9 +19,9 @@ scopes = "read_products,read_themes,write_products,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://sun-determine-lithuania-dear.trycloudflare.com/auth/callback",
-  "https://sun-determine-lithuania-dear.trycloudflare.com/auth/shopify/callback",
-  "https://sun-determine-lithuania-dear.trycloudflare.com/api/auth/callback"
+  "https://interfaces-younger-cold-menus.trycloudflare.com/auth/callback",
+  "https://interfaces-younger-cold-menus.trycloudflare.com/auth/shopify/callback",
+  "https://interfaces-younger-cold-menus.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
